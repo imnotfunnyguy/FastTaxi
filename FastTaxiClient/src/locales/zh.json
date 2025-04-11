@@ -1,0 +1,21 @@
+{
+  "name": "姓名",
+  "enter_name": "输入您的姓名",
+  "phone_number": "电话号码",
+  "enter_phone_number": "输入您的电话号码",
+  "pickup_location": "上车地点",
+  "enter_pickup_location": "输入上车地点",
+  "use_current_location": "使用当前位置",
+  "search_for_pickup_location": "搜索上车地点",
+  "search_location": "搜索位置",
+  "enter_destination": "输入目的地",
+  "destination": "目的地",
+  "search_for_destination" : "搜索目的地",
+  "additional_details": "附加信息",
+  "enter_additional_details": "输入附加信息",
+  "request_ride": "请求乘车",
+  "error_fill_fields": "请填写所有必填字段。",
+  "success_ride_request": "乘车请求已发送！等待司机...",
+  "switch_to_english": "切换到English"
+  
+}

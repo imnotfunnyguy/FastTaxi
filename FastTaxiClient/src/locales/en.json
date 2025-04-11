@@ -1,0 +1,20 @@
+{
+    "name": "Name",
+    "enter_name": "Enter Your Name",
+    "phone_number": "Phone Number",
+    "enter_phone_number": "Enter Your Phone Number",
+    "pickup_location": "Pickup Location",
+    "enter_pickup_location": "Enter Pickup Location",
+    "use_current_location": "Use Current Location",
+    "search_for_pickup_location": "Search for Pickup Location",
+    "search_location": "Search Location",
+    "search_for_destination": "Search for Destination",
+    "enter_destination": "Enter Destination",
+    "destination": "Destination",
+    "additional_details": "Additional Details",
+    "enter_additional_details": "Enter Additional Details",
+    "request_ride": "Request Ride",
+    "error_fill_fields": "Please fill in all mandatory fields.",
+    "success_ride_request": "Ride request sent! Waiting for a driver...",
+    "switch_to_chinese": "Switch to 中文"
+  }
