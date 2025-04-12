@@ -15,4 +15,5 @@ export const API_BASE_URL = CONFIG[ENV as keyof typeof CONFIG].BASE_URL;
 export const API_ENDPOINTS = {
   REQUEST_RIDE: `${API_BASE_URL}/request-ride`,
   CANCEL_RIDE: `${API_BASE_URL}/cancel-ride`,
+  AVAILABLE_DRIVERS: `${API_BASE_URL}/available-drivers`, // Added endpoint for available drivers
 };

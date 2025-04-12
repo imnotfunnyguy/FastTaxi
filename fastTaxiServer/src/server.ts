@@ -116,7 +116,20 @@ app.post("/api/driver-register", upload.single("driverIdPhoto"), async (req, res
 
 // Request Ride API
 app.post("/api/request-ride", async (req, res) => {
-  const { pickupLocation, destinationLocation, clientName, clientPhone } = req.body;
+  const { name, phoneNumber, pickupLocation, destination, additionalDetails } = req.body;
+
+  if (!name || !phoneNumber || !pickupLocation || !destination) {
+    return res.status(400).json({ message: "All mandatory fields are required." });
+  }
+
+  // Log the received data
+  console.log("Ride Request Data:", {
+    name,
+    phoneNumber,
+    pickupLocation,
+    destination,
+    additionalDetails,
+  });
 
   try {
     const drivers = await Driver.find({ isOnline: true });
@@ -137,14 +150,14 @@ app.post("/api/request-ride", async (req, res) => {
     });
 
     if (nearbyDrivers.length > 0) {
-      const ridePoints = calculateRidePoints(pickupLocation, destinationLocation);
+      const ridePoints = calculateRidePoints(pickupLocation, destination);
       const selectedDriver = nearbyDrivers[0];
 
       const rideRequest = new RideRequest({
-        clientName,
-        clientPhone,
+        name,
+        phoneNumber,
         pickupLocation,
-        destinationLocation,
+        destination,
         driverId: selectedDriver.driverId,
         ridePoints,
         status: "requesting",
@@ -159,6 +172,25 @@ app.post("/api/request-ride", async (req, res) => {
   } catch (error) {
     console.error("Error handling ride request:", error);
     res.status(500).json({ message: "Failed to process ride request." });
+  }
+});
+
+app.get("/api/available-drivers", async (req, res) => {
+  try {
+    const availableDrivers = await Driver.find({ isOnline: true }); // Fetch drivers marked as online
+    const messages = [
+      "Special deal: 20% off rides today!",
+      "Attention: Peak hours may cause delays.",
+      "New feature: Book rides in advance!",
+    ]; // Example messages
+
+    res.status(200).json({
+      availableDrivers,
+      messages,
+    });
+  } catch (error) {
+    console.error("Error fetching available drivers:", error);
+    res.status(500).json({ message: "Failed to fetch data from the server." });
   }
 });
 

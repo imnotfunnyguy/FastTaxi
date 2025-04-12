@@ -3,7 +3,11 @@ import { View, Text, StyleSheet, ActivityIndicator, Button, Alert } from "react-
 import { useNavigation } from "@react-navigation/native";
 import { API_ENDPOINTS } from "../config/config"; // Import the API endpoints
 
-const WaitingResponseScreen = ({ route }) => {
+import { RouteProp } from "@react-navigation/native";
+
+type WaitingResponseScreenRouteProp = RouteProp<{ params: { clientName: string; clientPhone: string } }, 'params'>;
+
+const WaitingResponseScreen = ({ route }: { route: WaitingResponseScreenRouteProp }) => {
   const navigation = useNavigation();
 
   // Extract client details from route params
