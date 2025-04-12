@@ -5,6 +5,7 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "./src/i18n";
 import BaseScreen from "./src/screens/BaseScreen";
 import WaitingResponseScreen from "./src/screens/WaitingResponseScreen";
+import HistoryScreen from "./src/screens/HistoryScreen"; 
 
 const Stack = createStackNavigator();
 
@@ -23,6 +24,11 @@ const App = () => {
             component={WaitingResponseScreen}
             options={{ title: "Waiting for Driver" }}
           />
+          <Stack.Screen
+          name="HistoryScreen"
+          component={HistoryScreen}
+          options={{ title: "Ride History" }}
+        />
         </Stack.Navigator>
       </NavigationContainer>
     </I18nextProvider>
