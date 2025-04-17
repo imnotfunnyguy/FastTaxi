@@ -1,25 +1,82 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert, Image, TouchableOpacity, ScrollView, FlatList } from "react-native";
-import { Picker } from "@react-native-picker/picker"; // Import Picker
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  Alert,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  FlatList,
+  Modal,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 import { API_ENDPOINTS } from "../config/config";
 import { useTranslation } from "react-i18next";
 import { launchImageLibrary } from "react-native-image-picker";
+import styles from "./DriverRegistrationScreen.styles"; // Import the styles
 
 const DriverRegistrationScreen = ({ navigation }: any) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // Function to toggle language
+  const toggleLanguage = () => {
+    const newLanguage = i18n.language === "en" ? "zh" : "en"; // Switch between English and Chinese
+    i18n.changeLanguage(newLanguage);
+  };
 
   // Driver Information State
   const [driverId, setDriverId] = useState("");
   const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [driverIdPhotoUri, setDriverIdPhotoUri] = useState<string | null>(null);
 
   // Car Information State
-  const [cars, setCars] = useState<any[]>([]); // List of cars
-  const [selectedCarIndex, setSelectedCarIndex] = useState<number | null>(null); // Index of the selected car
+  const [cars, setCars] = useState<any[]>([]);
+  const [selectedCarIndex, setSelectedCarIndex] = useState<number | null>(null);
   const [licensePlate, setLicensePlate] = useState("");
-  const [color, setColor] = useState("red"); // Default color is "red"
-  const [carType, setCarType] = useState("4 seats"); // Default car type is "4 seats"
+  const [color, setColor] = useState("red");
+  const [carType, setCarType] = useState("4 seats");
+
+  // State to track if driver is already registered
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  // Modal State
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  // Load Driver Information from Storage
+  useEffect(() => {
+    const loadDriverInfo = async () => {
+      try {
+        const storedDriverInfo = await AsyncStorage.getItem("driverInfo");
+        if (storedDriverInfo) {
+          const parsedDriverInfo = JSON.parse(storedDriverInfo);
+          setDriverId(parsedDriverInfo.driverId);
+          setName(parsedDriverInfo.name);
+          setPhoneNumber(parsedDriverInfo.phoneNumber);
+          setDriverIdPhotoUri(parsedDriverInfo.driverIdPhotoUri);
+          setCars(parsedDriverInfo.cars || []);
+          setIsRegistered(true); // Mark as registered
+        }
+      } catch (error) {
+        console.error("Error loading driver info from storage:", error);
+      }
+    };
+
+    loadDriverInfo();
+  }, []);
+
+  // Save Driver Information to Storage
+  const saveDriverInfoToStorage = async (driverInfo: any) => {
+    try {
+      await AsyncStorage.setItem("driverInfo", JSON.stringify(driverInfo));
+    } catch (error) {
+      console.error("Error saving driver info to storage:", error);
+    }
+  };
 
   // Handle Driver ID Photo Selection
   const handleSelectDriverIdPhoto = () => {
@@ -44,59 +101,13 @@ const DriverRegistrationScreen = ({ navigation }: any) => {
     );
   };
 
-  // Add or Update Car
-  const handleAddOrUpdateCar = () => {
-    if (!licensePlate || !color || !carType) {
-      Alert.alert("Error", "License Plate, Color, and Car Type are mandatory.");
-      return;
-    }
-
-    const newCar = { licensePlate, color, carType };
-
-    if (selectedCarIndex !== null) {
-      // Update existing car
-      const updatedCars = [...cars];
-      updatedCars[selectedCarIndex] = newCar;
-      setCars(updatedCars);
-      Alert.alert("Success", "Car details updated!");
-    } else {
-      // Add new car
-      setCars([...cars, newCar]);
-      Alert.alert("Success", "Car added!");
-    }
-
-    // Clear inputs
-    setLicensePlate("");
-    setColor("red"); // Reset to default color
-    setCarType("4 seats"); // Reset to default car type
-    setSelectedCarIndex(null);
-  };
-
-  // Select Car
-  const handleSelectCar = (index: number) => {
-    const car = cars[index];
-    setLicensePlate(car.licensePlate);
-    setColor(car.color);
-    setCarType(car.carType);
-    setSelectedCarIndex(index);
-  };
-
-  // Remove Car
-  const handleRemoveCar = (index: number) => {
-    const updatedCars = cars.filter((_, i) => i !== index);
-    setCars(updatedCars);
-    Alert.alert("Success", "Car removed!");
-  };
-
-  // Handle Form Submission
+  // Handle Form Submission for Registration
   const handleRegister = async () => {
-    // Validate Driver Information
-    if (!driverId || !name || !driverIdPhotoUri) {
-      Alert.alert("Error", "Driver ID, Name, and Driver ID Photo are mandatory.");
+    if (!driverId || !name || !phoneNumber || !driverIdPhotoUri) {
+      Alert.alert("Error", "Driver ID, Name, Phone Number, and Driver ID Photo are mandatory.");
       return;
     }
 
-    // Validate Car Information
     if (cars.length === 0) {
       Alert.alert("Error", "At least one car must be added.");
       return;
@@ -104,19 +115,15 @@ const DriverRegistrationScreen = ({ navigation }: any) => {
 
     try {
       const formData = new FormData();
-      // Driver Information
       formData.append("driverId", driverId);
       formData.append("name", name);
+      formData.append("phoneNumber", phoneNumber);
       formData.append("driverIdPhoto", {
         uri: driverIdPhotoUri,
         type: "image/jpeg",
         name: `${driverId}_id_photo.jpg`,
       });
-
-      // Car Information
-      formData.append("cars", JSON.stringify(cars)); // Send cars as a JSON string
-
-      console.log("Form Data:", formData);
+      formData.append("cars", JSON.stringify(cars));
 
       const response = await axios.post(API_ENDPOINTS.DRIVER_REGISTER, formData, {
         headers: {
@@ -125,8 +132,10 @@ const DriverRegistrationScreen = ({ navigation }: any) => {
       });
 
       if (response.status === 200) {
+        const driverInfo = { driverId, name, driverIdPhotoUri, cars };
+        await saveDriverInfoToStorage(driverInfo); // Save to storage
         Alert.alert("Success", "Driver registered successfully!");
-        navigation.navigate("WaitingForRequestsScreen");
+        setIsRegistered(true); // Mark as registered
       } else {
         Alert.alert("Error", "Failed to register driver.");
       }
@@ -136,145 +145,202 @@ const DriverRegistrationScreen = ({ navigation }: any) => {
     }
   };
 
+  // Function to handle adding a car
+  const handleAddCar = () => {
+    if (!licensePlate) {
+      Alert.alert(t("error"), t("error_license_plate_required"));
+      return;
+    }
+
+    const newCar = { licensePlate, color, carType };
+    setCars([...cars, newCar]);
+    setLicensePlate("");
+    setColor("red");
+    setCarType("4 seats");
+    setIsModalVisible(false); // Close the modal
+  };
+
+  // Function to remove a car
+  const handleRemoveCar = (index: number) => {
+    const updatedCars = cars.filter((_, i) => i !== index);
+    setCars(updatedCars);
+  };
+
+  // Handle Go Online
+  const handleGoOnline = () => {
+    navigation.navigate("WaitingForRequestsScreen");
+  };
+
+  // Function to clear form and logged-in details
+  const clearForm = async () => {
+    setDriverId("");
+    setName("");
+    setPhoneNumber("");
+    setDriverIdPhotoUri(null);
+    setCars([]);
+    setIsRegistered(false);
+    await AsyncStorage.removeItem("driverInfo");
+    Alert.alert(t("success"), t("form_cleared"));
+  };
+
+  // Add logo and buttons to the navigation bar
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <Image
+          source={{ uri: "https://via.placeholder.com/150x50?text=FAST+TAXI" }}
+          style={styles.logo}
+        />
+      ),
+      headerRight: () => (
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <TouchableOpacity onPress={toggleLanguage} style={styles.languageButton}>
+            <Text style={styles.languageButtonText}>
+              {i18n.language === "en" ? "中文" : "EN"}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={clearForm} style={styles.clearButton}>
+            <Text style={styles.clearButtonText}>{t("clear")}</Text>
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  }, [navigation, i18n.language]);
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{t("driver_registration")}</Text>
 
-      {/* Driver Information Section */}
-      <Text style={styles.sectionTitle}>{t("driver_information")}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder={t("driver_id")}
-        value={driverId}
-        onChangeText={setDriverId}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder={t("name")}
-        value={name}
-        onChangeText={setName}
-      />
-      <TouchableOpacity style={styles.photoButton} onPress={handleSelectDriverIdPhoto}>
-        <Text style={styles.photoButtonText}>
-          {driverIdPhotoUri ? t("change_driver_id_photo") : t("add_driver_id_photo")}
-        </Text>
-      </TouchableOpacity>
-      {driverIdPhotoUri && <Image source={{ uri: driverIdPhotoUri }} style={styles.photoPreview} />}
-
-      {/* Car Information Section */}
-      <Text style={styles.sectionTitle}>{t("car_information")}</Text>
-      <FlatList
-        data={cars}
-        keyExtractor={(_, index) => index.toString()}
-        renderItem={({ item, index }) => (
-          <View style={[styles.carItem, selectedCarIndex === index && styles.selectedCar]}>
-            <Text>{`${item.licensePlate} - ${item.color} - ${item.carType}`}</Text>
-            <View style={styles.carActions}>
-              <Button title={t("edit")} onPress={() => handleSelectCar(index)} />
-              <Button title={t("remove")} onPress={() => handleRemoveCar(index)} />
-            </View>
+      {isRegistered ? (
+        <>
+          {/* Display Registered Driver Information */}
+          <Text style={styles.sectionTitle}>{t("driver_information")}</Text>
+          <Text>{t("driver_id")}: {driverId}</Text>
+          <Text>{t("name")}: {name}</Text>
+          <Text>{t("phone_number")}: {phoneNumber}</Text>
+          {driverIdPhotoUri && <Image source={{ uri: driverIdPhotoUri }} style={styles.photoPreview} />}
+          <View style={styles.carInfoHeader}>
+            <Text style={styles.sectionTitle}>{t("car_information")}</Text>
+            <TouchableOpacity onPress={() => setIsModalVisible(true)} style={styles.addButton}>
+              <Text style={styles.addButtonText}>{t("add")}</Text>
+            </TouchableOpacity>
           </View>
-        )}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder={t("license_plate")}
-        value={licensePlate}
-        onChangeText={setLicensePlate}
-      />
-      <Text style={styles.label}>{t("color")}</Text>
-      <Picker
-        selectedValue={color}
-        onValueChange={(itemValue) => setColor(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="Red" value="red" />
-        <Picker.Item label="Green" value="green" />
-        <Picker.Item label="Blue" value="blue" />
-      </Picker>
-      <Text style={styles.label}>{t("car_type")}</Text>
-      <Picker
-        selectedValue={carType}
-        onValueChange={(itemValue) => setCarType(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="4 Seats" value="4 seats" />
-        <Picker.Item label="5 Seats" value="5 seats" />
-        <Picker.Item label="4 Seat Comfort" value="4 seat comfort" />
-      </Picker>
-      <Button title={selectedCarIndex !== null ? t("update_car") : t("add_car")} onPress={handleAddOrUpdateCar} />
+          <FlatList
+            data={cars}
+            keyExtractor={(_, index) => index.toString()}
+            renderItem={({ item, index }) => (
+              <TouchableOpacity
+                onPress={() => setSelectedCarIndex(index)} // Update selectedCarIndex
+                style={[
+                  styles.carItem,
+                  selectedCarIndex === index && styles.selectedCarItem, // Highlight selected item
+                ]}
+              >
+                <Text>{`${item.licensePlate} - ${item.color} - ${item.carType}`}</Text>
+                <TouchableOpacity onPress={() => handleRemoveCar(index)} style={styles.removeButton}>
+                  <Text style={styles.removeButtonText}>{t("remove")}</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            )}
+          />
+          <Button title={t("go_online")} onPress={handleGoOnline} />
+        </>
+      ) : (
+        <>
+          {/* Display Blank Registration Fields */}
+          {/* Driver Information */}
+          <Text style={styles.sectionTitle}>{t("driver_information")}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder={t("driver_id")}
+            value={driverId}
+            onChangeText={setDriverId}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={t("name")}
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={t("phone_number")}
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
+          />
+          <TouchableOpacity style={styles.photoButton} onPress={handleSelectDriverIdPhoto}>
+            <Text style={styles.photoButtonText}>
+              {driverIdPhotoUri ? t("change_driver_id_photo") : t("add_driver_id_photo")}
+            </Text>
+          </TouchableOpacity>
+          {driverIdPhotoUri && <Image source={{ uri: driverIdPhotoUri }} style={styles.photoPreview} />}
+          {/* Car Information */}
+          <View style={styles.carInfoHeader}>
+            <Text style={styles.sectionTitle}>{t("car_information")}</Text>
+            <TouchableOpacity onPress={() => setIsModalVisible(true)} style={styles.addButton}>
+              <Text style={styles.addButtonText}>{t("add")}</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={cars}
+            keyExtractor={(_, index) => index.toString()}
+            renderItem={({ item, index }) => (
+              <View style={styles.carItem}>
+                <Text>{`${item.licensePlate} - ${item.color} - ${item.carType}`}</Text>
+                <TouchableOpacity onPress={() => handleRemoveCar(index)} style={styles.removeButton}>
+                  <Text style={styles.removeButtonText}>{t("remove")}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          />
 
-      <Button title={t("register")} onPress={handleRegister} />
+          {/* Add Car Modal */}
+          <Modal
+            visible={isModalVisible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setIsModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.sectionTitle}>{t("add_car")}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("license_plate")}
+                  value={licensePlate}
+                  onChangeText={setLicensePlate}
+                />
+                <Text style={styles.label}>{t("color")}</Text>
+                <Picker
+                  selectedValue={color}
+                  onValueChange={(itemValue) => setColor(itemValue)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Red" value="red" />
+                  <Picker.Item label="Green" value="green" />
+                  <Picker.Item label="Blue" value="blue" />
+                </Picker>
+                <Text style={styles.label}>{t("car_type")}</Text>
+                <Picker
+                  selectedValue={carType}
+                  onValueChange={(itemValue) => setCarType(itemValue)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="4 Seats" value="4 seats" />
+                  <Picker.Item label="5 Seats" value="5 seats" />
+                  <Picker.Item label="4 Seat Comfort" value="4 seat comfort" />
+                </Picker>
+                <Button title={t("add_car")} onPress={handleAddCar} />
+                <Button title={t("cancel")} onPress={() => setIsModalVisible(false)} />
+              </View>
+            </View>
+          </Modal>
+          <Button title={t("register")} onPress={handleRegister} />
+        </>
+      )}
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 8,
-    marginBottom: 16,
-    borderRadius: 4,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  picker: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    marginBottom: 16,
-  },
-  photoButton: {
-    backgroundColor: "#007bff",
-    padding: 10,
-    borderRadius: 4,
-    marginBottom: 16,
-  },
-  photoButtonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  photoPreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  carItem: {
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  selectedCar: {
-    borderColor: "#007bff",
-    backgroundColor: "#e6f7ff",
-  },
-  carActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
-  },
-});
 
 export default DriverRegistrationScreen;

@@ -1,9 +1,11 @@
 {
+  "clear" : "清除",
   "driver_registration": "司机注册",
   "driver_information": "司机信息",
   "car_information": "车辆信息",
   "driver_id": "司机编号",
   "name": "姓名",
+  "phone_number": "电话号码",
   "add_driver_id_photo": "添加司机身份证照片",
   "change_driver_id_photo": "更改司机身份证照片",
   "license_plate": "车牌号",

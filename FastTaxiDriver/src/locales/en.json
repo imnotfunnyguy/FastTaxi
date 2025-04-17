@@ -1,9 +1,11 @@
 {
+  "clear": "Clear",
   "driver_registration": "Driver Registration",
   "driver_information": "Driver Information",
   "car_information": "Car Information",
   "driver_id": "Driver ID",
   "name": "Name",
+  "phone_number": "Phone Number",
   "add_driver_id_photo": "Add Driver ID Photo",
   "change_driver_id_photo": "Change Driver ID Photo",
   "license_plate": "License Plate",
