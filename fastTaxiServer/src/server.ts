@@ -29,44 +29,79 @@ connectDatabase();
 io.on("connection", (socket) => {
   console.log("A driver connected:", socket.id);
 
-  socket.on("driverRegister", async (data) => {
-    const { driverId, name, licensePlate, phoneNumber, idPhotoUri } = data;
+  // Event: driverOnline
+  socket.on("driverOnline", async (data) => {
+    const { driverId, name, phoneNumber, cars } = data;
 
     try {
-      console.log(driverId, name, licensePlate, phoneNumber, idPhotoUri);
       let driver = await Driver.findOne({ driverId });
 
       if (driver) {
+        // Update existing driver
         driver.name = name;
-        driver.licensePlate = licensePlate;
         driver.phoneNumber = phoneNumber;
-        driver.idPhotoUri = idPhotoUri;
-        driver.socketId = socket.id;
+        driver.cars = cars;
+        driver.isOnline = true; // Mark driver as online
+        driver.socketId = socket.id; // Save the socket ID
         await driver.save();
-        console.log(`Driver ${driverId} updated.`);
+        console.log(`Driver ${driverId} is now online.`);
       } else {
+        // Register new driver
         driver = new Driver({
           driverId,
           name,
-          licensePlate,
           phoneNumber,
-          idPhotoUri,
+          cars,
+          isOnline: true, // Mark driver as online
           socketId: socket.id,
           points: 100, // Default points
         });
         await driver.save();
-        console.log(`Driver ${driverId} registered.`);
+        console.log(`Driver ${driverId} registered and is now online.`);
       }
 
-      socket.emit("registrationSuccess", { message: "Driver registered successfully!" });
+      socket.emit("onlineSuccess", { message: "Driver is now online." });
     } catch (error) {
-      console.error("Error registering driver:", error);
-      socket.emit("registrationError", { message: "Failed to register driver." });
+      console.error("Error setting driver online:", error);
+      socket.emit("onlineError", { message: "Failed to set driver online." });
     }
   });
 
-  socket.on("disconnect", () => {
+  // Event: driverSync
+  socket.on("driverSync", async (data) => {
+    const { driverId, location } = data;
+
+    try {
+      const driver = await Driver.findOne({ driverId });
+
+      if (driver) {
+        driver.location = location; // Update driver's location
+        await driver.save();
+        console.log(`Driver ${driverId} location updated.`);
+      } else {
+        console.warn(`Driver ${driverId} not found for location update.`);
+      }
+    } catch (error) {
+      console.error("Error syncing driver location:", error);
+    }
+  });
+
+  // Event: disconnect
+  socket.on("disconnect", async () => {
     console.log("A driver disconnected:", socket.id);
+
+    try {
+      const driver = await Driver.findOne({ socketId: socket.id });
+
+      if (driver) {
+        driver.isOnline = false; // Mark driver as offline
+        driver.socketId = undefined; // Clear the socket ID
+        await driver.save();
+        console.log(`Driver ${driver.driverId} is now offline.`);
+      }
+    } catch (error) {
+      console.error("Error handling driver disconnect:", error);
+    }
   });
 });
 
@@ -84,9 +119,20 @@ app.post("/api/driver-register", upload.single("driverIdPhoto"), async (req, res
     // Parse car details from the request
     const carDetails = cars ? JSON.parse(cars) : [];
 
+    // Validate car details
+    const validColors = ["red", "green", "blue"];
+    for (const car of carDetails) {
+      if (!car.licensePlate || !car.color || !validColors.includes(car.color)) {
+        return res.status(400).json({
+          message: `Invalid car details. Each car must have a license plate and a valid color (red, green, or blue).`,
+        });
+      }
+    }
+
     let driver = await Driver.findOne({ driverId });
 
     if (driver) {
+      // Update existing driver
       driver.name = name;
       driver.phoneNumber = phoneNumber;
       driver.idPhotoUri = driverIdPhoto ? driverIdPhoto.originalname : driver.idPhotoUri; // Update photo if provided
@@ -94,6 +140,7 @@ app.post("/api/driver-register", upload.single("driverIdPhoto"), async (req, res
       await driver.save();
       console.log(`Driver ${driverId} updated.`);
     } else {
+      // Register new driver
       driver = new Driver({
         driverId,
         name,
@@ -177,16 +224,29 @@ app.post("/api/request-ride", async (req, res) => {
 
 app.get("/api/available-drivers", async (req, res) => {
   try {
-    const availableDrivers = await Driver.find({ isOnline: true }); // Fetch drivers marked as online
+    const onlineDrivers = await Driver.find({ isOnline: true }); // Fetch drivers marked as online
+    const onlineDriverCount = await Driver.countDocuments({ isOnline: true });
+    // Get the IDs of drivers currently in a ride
+    const driversInRide = await RideRequest.find({ status: "in_ride" }).distinct("driverId");
+
+    // Filter out drivers who are in a ride
+    const availableDrivers = onlineDrivers.filter(
+      (driver) => !driversInRide.includes(driver.driverId)
+    );
+    const availableDriverCount = availableDrivers.length;
+
     const messages = [
       "Special deal: 20% off rides today!",
       "Attention: Peak hours may cause delays.",
       "New feature: Book rides in advance!",
     ]; // Example messages
+    const carTypes = ["Sedan", "SUV", "Luxury", "Van"]; // Example car types
 
     res.status(200).json({
-      availableDrivers,
+      onlineDriverCount,
+      availableDriverCount,
       messages,
+      carTypes,
     });
   } catch (error) {
     console.error("Error fetching available drivers:", error);
