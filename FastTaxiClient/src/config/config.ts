@@ -21,3 +21,5 @@ export const API_ENDPOINTS = {
 export const URL_ENDPOINTS = {
   PLACEHOLDER: "https://placehold.co/150x50?text=FAST+TAXI"
 }
+
+export const GOOGLE_API_KEY = "AIzaSyDC4QRDjRUlSiFOPj9cbV5PxAfu8noqgNU"; // Add the missing export

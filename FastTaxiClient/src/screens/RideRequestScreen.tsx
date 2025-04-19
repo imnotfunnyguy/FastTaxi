@@ -11,11 +11,11 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Image,
-  TouchableOpacity,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { API_ENDPOINTS, URL_ENDPOINTS } from "../config/config"; // Import the API endpoints
+import { API_ENDPOINTS, URL_ENDPOINTS, GOOGLE_API_KEY } from "../config/config"; // Import the API endpoints and Google API key
 import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
+import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete"; // Import Google Places Autocomplete
 
 const RideRequestScreen = ({ navigate }: { navigate: (screen: string, params?: any) => void }) => {
   const [name, setName] = useState("");
@@ -28,7 +28,7 @@ const RideRequestScreen = ({ navigate }: { navigate: (screen: string, params?: a
   const [availableDrivers, setAvailableDrivers] = useState(0);
   const [messages, setMessages] = useState([]); // State for the list of messages
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation(); // Use translation hook to get the current language
 
   // Function to fetch data from the server
   const fetchServerData = async () => {
@@ -59,7 +59,7 @@ const RideRequestScreen = ({ navigate }: { navigate: (screen: string, params?: a
 
   const requestRide = async () => {
     if (!name || !phoneNumber || !pickupLocation || !destination || !carType) {
-      Alert.alert("Error", "Please fill in all mandatory fields.");
+      Alert.alert(t("error"), t("fill_mandatory_fields")); // Use translations for error messages
       return;
     }
 
@@ -98,14 +98,14 @@ const RideRequestScreen = ({ navigate }: { navigate: (screen: string, params?: a
 
       await AsyncStorage.setItem("clientRequestData", JSON.stringify(requestDetails));
 
-      Alert.alert("Loading", "Ride request sent! Waiting for a driver...");
+      Alert.alert(t("loading"), t("ride_request_sent"));
       navigate("RequestDetailScreen", {
         clientName: name,
         clientPhone: phoneNumber,
       });
     } catch (error) {
       console.error("Failed to request ride", error);
-      Alert.alert("Error", "Failed to request ride. Please try again.");
+      Alert.alert(t("error"), t("ride_request_failed"));
     }
   };
 
@@ -155,20 +155,38 @@ const RideRequestScreen = ({ navigate }: { navigate: (screen: string, params?: a
 
         {/* Pickup Location */}
         <Text style={styles.label}>{t("pickup_location")}</Text>
-        <TextInput
-          style={styles.input}
+        <GooglePlacesAutocomplete
           placeholder={t("enter_pickup_location")}
-          value={pickupLocation}
-          onChangeText={setPickupLocation}
+          onPress={(data, details = null) => {
+            setPickupLocation(data.description); // Set the selected pickup location
+          }}
+          query={{
+            key: GOOGLE_API_KEY,
+            language: i18n.language, // Dynamically set the language based on the app's current language
+          }}
+          styles={{
+            textInput: styles.input,
+          }}
+          fetchDetails={true} // Fetch additional details for the selected location
+          onFail={(error) => console.error("Google Places Error:", error)} // Handle errors
         />
 
         {/* Destination */}
         <Text style={styles.label}>{t("destination")}</Text>
-        <TextInput
-          style={styles.input}
+        <GooglePlacesAutocomplete
           placeholder={t("enter_destination")}
-          value={destination}
-          onChangeText={setDestination}
+          onPress={(data, details = null) => {
+            setDestination(data.description); // Set the selected destination
+          }}
+          query={{
+            key: GOOGLE_API_KEY,
+            language: i18n.language, // Dynamically set the language based on the app's current language
+          }}
+          styles={{
+            textInput: styles.input,
+          }}
+          fetchDetails={true} // Fetch additional details for the selected location
+          onFail={(error) => console.error("Google Places Error:", error)} // Handle errors
         />
 
         {/* Car Type */}
@@ -202,14 +220,6 @@ const RideRequestScreen = ({ navigate }: { navigate: (screen: string, params?: a
 
         {/* Request Ride Button */}
         <Button title={t("request_ride")} onPress={requestRide} />
-
-        {/* Navigate to History */}
-        <TouchableOpacity
-          style={styles.historyButton}
-          onPress={() => navigate("HistoryScreen")}
-        >
-          <Text style={styles.historyButtonText}>{t("view_history")}</Text>
-        </TouchableOpacity>
       </ScrollView>
     </TouchableWithoutFeedback>
   );
@@ -257,17 +267,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 8,
     marginBottom: 16,
-  },
-  historyButton: {
-    marginTop: 16,
-    padding: 10,
-    backgroundColor: "#007bff",
-    borderRadius: 4,
-  },
-  historyButtonText: {
-    color: "white",
-    textAlign: "center",
-    fontWeight: "bold",
   },
 });
 

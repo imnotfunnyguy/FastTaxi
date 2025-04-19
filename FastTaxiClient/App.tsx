@@ -22,7 +22,7 @@ const App = () => {
         {currentScreen === "HomeScreen" && (
           <HomeScreen navigate={navigate} />
         )}
-        {currentScreen === "RideRequestcreen" && (
+        {currentScreen === "RideRequestScreen" && (
           <RideRequestcreen navigate={navigate} />
         )}
         {currentScreen === "RequestDetailScreen" && (

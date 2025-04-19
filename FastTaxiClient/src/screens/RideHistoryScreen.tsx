@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
   },
   backButtonContainer: {
     position: "absolute",
-    top: 16,
-    left: 16,
+    top: 50,
+    left: 20,
   },
   inputContainer: {
     flex: 1,
