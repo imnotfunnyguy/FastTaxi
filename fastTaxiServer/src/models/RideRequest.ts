@@ -8,7 +8,7 @@ const RideRequestSchema = new mongoose.Schema({
   driverId: { type: String }, // Added driverId field
   status: {
     type: String,
-    enum: ["requesting", "accepted", "expired", "canceled"],
+    enum: ["requested", "accepted", "completed", "canceled"],
     required: true,
   },
   pickupLocation: {

@@ -16,7 +16,12 @@ const driverSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true },
   idPhotoUri: { type: String },
   isOnline: { type: Boolean, default: false },
-  points: { type: Number, default: 100 },
+  status: {
+    type: String,
+    enum: ["active", "pending", "suspended", "deleted"], // Predefined statuses
+    default: "pending", // Default status is "pending"
+  },
+  points: { type: Number, default: 0 },
   location: {
     latitude: { type: Number },
     longitude: { type: Number },

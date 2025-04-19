@@ -1,12 +1,11 @@
 import { Driver } from "../models/Driver";
 
 export const addOrUpdateDriver = async (driverData: any) => {
-  const { id, name, licensePlate, phoneNumber, location, socketId } = driverData;
+  const { id, name, phoneNumber, location, socketId } = driverData;
 
   let driver = await Driver.findOne({ id });
   if (driver) {
     driver.name = name;
-    driver.licensePlate = licensePlate;
     driver.phoneNumber = phoneNumber;
     driver.location = location;
     driver.socketId = socketId;
