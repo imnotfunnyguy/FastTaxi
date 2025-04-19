@@ -1,21 +1,19 @@
 import React from "react";
 import { View, Text, StyleSheet, Button, Alert } from "react-native";
 import axios from "axios";
-import { API_BASE_URL } from "../config/config";
+import { API_ENDPOINTS } from "../config/config";
 
 const RideAcceptedScreen = ({ route, navigate }: { route: any; navigate: (screen: string, params?: any) => void }) => {
   const { rideRequest, pointsDeducted } = route.params;
 
   const handleCompleteRide = async () => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/rideRequests/complete`, {
-        rideRequestId: rideRequest.id,
-        driverId: "123", // Replace with the actual driver ID
+      const response = await axios.post(API_ENDPOINTS.RIDE_REQUESTS_COMPLETE, {
+        rideRequestId: rideRequest.id
       });
 
       if (response.status === 200) {
         Alert.alert("Success", "Ride completed successfully!");
-        navigate("WaitingForRequests", { driverId: "123" }); // Pass driverId back to WaitingForRequestsScreen
       } else {
         Alert.alert("Error", "Failed to complete the ride.");
       }

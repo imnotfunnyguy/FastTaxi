@@ -2,7 +2,7 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { NavigationContainer } from "@react-navigation/native";
 import DriverRegistrationScreen from "../screens/DriverRegistrationScreen";
-import WaitingForRequestsScreen from "../screens/WaitingForRequestsScreen";
+import WaitingForRequestsScreen from "../screens/RideRequestsWaitScreen";
 
 const Stack = createStackNavigator();
 

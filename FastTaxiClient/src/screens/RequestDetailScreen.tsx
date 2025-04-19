@@ -1,14 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Button, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useTranslation } from "react-i18next"; // Import translation hook
 import { API_ENDPOINTS } from "../config/config"; // Import the API endpoints
 
-import { RouteProp } from "@react-navigation/native";
-
-type WaitingResponseScreenRouteProp = RouteProp<{ params: { clientName: string; clientPhone: string } }, 'params'>;
-
-const WaitingResponseScreen = ({ route }: { route: WaitingResponseScreenRouteProp }) => {
-  const navigation = useNavigation();
+const RequestDetailScreen = ({ route, navigate }: { route: any; navigate: (screen: string, params?: any) => void }) => {
+  const { t } = useTranslation(); // Use translation hook
 
   // Extract client details from route params
   const { clientName, clientPhone } = route.params;
@@ -16,16 +12,16 @@ const WaitingResponseScreen = ({ route }: { route: WaitingResponseScreenRoutePro
   // Function to handle cancel request
   const handleCancelRequest = () => {
     Alert.alert(
-      "Cancel Ride Request",
-      "Are you sure you want to cancel the ride request?",
+      t("cancel_ride_request"), // Translated title
+      t("cancel_ride_request_confirmation"), // Translated confirmation message
       [
-        { text: "No", style: "cancel" },
+        { text: t("no"), style: "cancel" },
         {
-          text: "Yes",
+          text: t("yes"),
           onPress: async () => {
             try {
               // Send cancel request to the server
-              const response = await fetch(API_ENDPOINTS.CANCEL_RIDE, {
+              const response = await fetch(API_ENDPOINTS.RIDE_REQUESTS_CANCEL, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -37,15 +33,15 @@ const WaitingResponseScreen = ({ route }: { route: WaitingResponseScreenRoutePro
               });
 
               if (!response.ok) {
-                throw new Error("Failed to cancel the ride request.");
+                throw new Error(t("cancel_ride_request_failed"));
               }
 
               // Navigate back to the previous screen
-              Alert.alert("Success", "Ride request has been canceled.");
-              navigation.goBack();
+              Alert.alert(t("success"), t("ride_request_canceled"));
+              navigate("HomeScreen");
             } catch (error) {
               console.error("Failed to cancel ride request:", error);
-              Alert.alert("Error", "Failed to cancel the ride request. Please try again.");
+              Alert.alert(t("error"), t("cancel_ride_request_failed_retry"));
             }
           },
         },
@@ -55,10 +51,16 @@ const WaitingResponseScreen = ({ route }: { route: WaitingResponseScreenRoutePro
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Waiting for a driver to accept your request...</Text>
+      {/* Banner */}
+      <View style={styles.banner}>
+        <Text style={styles.bannerText}>{t("request_details")}</Text>
+      </View>
+
+      {/* Main Content */}
+      <Text style={styles.text}>{t("waiting_for_driver")}</Text>
       <ActivityIndicator size="large" color="#0000ff" />
       {/* Cancel Request Button */}
-      <Button title="Cancel Request" onPress={handleCancelRequest} color="#ff0000" />
+      <Button title={t("cancel_request")} onPress={handleCancelRequest} color="#ff0000" />
     </View>
   );
 };
@@ -70,6 +72,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
   },
+  banner: {
+    width: "100%",
+    backgroundColor: "#007bff",
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  bannerText: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
   text: {
     fontSize: 18,
     marginBottom: 16,
@@ -77,4 +91,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WaitingResponseScreen;
+export default RequestDetailScreen;

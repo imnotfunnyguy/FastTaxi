@@ -150,7 +150,7 @@ app.get("/api/driver/details", async (req, res) => {
 });
 
 // Driver Registration API
-app.post("/api/driver-register", upload.single("driverIdPhoto"), async (req, res) => {
+app.post("/api/driver/register", upload.single("driverIdPhoto"), async (req, res) => {
   const { driverId, name, phoneNumber, cars } = req.body;
   const driverIdPhoto = req.file; // Access the uploaded photo
 
@@ -204,7 +204,7 @@ app.post("/api/driver-register", upload.single("driverIdPhoto"), async (req, res
 });
 
 // Request Ride API
-app.post("/api/request-ride", async (req, res) => {
+app.post("/api/rideRequests/request", async (req, res) => {
   const { name, phoneNumber, pickupLocation, destination, additionalDetails } = req.body;
 
   if (!name || !phoneNumber || !pickupLocation || !destination) {
@@ -264,7 +264,7 @@ app.post("/api/request-ride", async (req, res) => {
   }
 });
 
-app.get("/api/available-drivers", async (req, res) => {
+app.get("/api/drivers/available", async (req, res) => {
   try {
     const onlineDrivers = await Driver.find({ isOnline: true }); // Fetch drivers marked as online
     const onlineDriverCount = await Driver.countDocuments({ isOnline: true });
@@ -329,12 +329,12 @@ app.post("/api/rideRequests/accept", async (req, res) => {
 app.post("/api/rideRequests/complete", async (req, res) => {
   const { rideRequestId, driverId } = req.body;
 
-  if (!rideRequestId || !driverId) {
+  if (!rideRequestId) {
     return res.status(400).json({ message: "Ride request ID and driver ID are required." });
   }
 
   try {
-    const rideRequest = await RideRequest.findOne({ _id: rideRequestId, driverId });
+    const rideRequest = await RideRequest.findOne({ _id: rideRequestId });
 
     if (!rideRequest) {
       return res.status(404).json({ message: "Ride request not found or not assigned to this driver." });
@@ -370,6 +370,36 @@ app.get("/api/rideRequests", async (req, res) => {
   } catch (error) {
     console.error("Error fetching ride requests:", error);
     res.status(500).json({ message: "Failed to fetch ride requests." });
+  }
+});
+
+app.post("/api/rideRequests/cancel", async (req, res) => {
+  const { clientName, clientPhone } = req.body;
+
+  if (!clientName || !clientPhone) {
+    return res.status(400).json({ message: "Client name and phone number are required." });
+  }
+
+  try {
+    // Find the ride request by client name and phone number
+    const rideRequest = await RideRequest.findOne({
+      name: clientName,
+      phoneNumber: clientPhone,
+      status: { $in: ["requested", "accepted"] }, // Only cancel if the status is "requested" or "accepted"
+    });
+
+    if (!rideRequest) {
+      return res.status(404).json({ message: "Ride request not found or cannot be canceled." });
+    }
+
+    // Update the status to "canceled"
+    rideRequest.status = "canceled";
+    await rideRequest.save();
+
+    res.status(200).json({ message: "Ride request canceled successfully." });
+  } catch (error) {
+    console.error("Error canceling ride request:", error);
+    res.status(500).json({ message: "Failed to cancel ride request." });
   }
 });
 

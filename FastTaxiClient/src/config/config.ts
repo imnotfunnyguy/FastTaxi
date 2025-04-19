@@ -13,7 +13,11 @@ export const API_BASE_URL = CONFIG[ENV as keyof typeof CONFIG].BASE_URL;
 
 // Define API endpoints
 export const API_ENDPOINTS = {
-  REQUEST_RIDE: `${API_BASE_URL}/request-ride`,
-  CANCEL_RIDE: `${API_BASE_URL}/cancel-ride`,
-  AVAILABLE_DRIVERS: `${API_BASE_URL}/available-drivers`, // Added endpoint for available drivers
+  RIDE_REQUESTS_REQUEST: `${API_BASE_URL}/rideRequests/request`,
+  RIDE_REQUESTS_CANCEL: `${API_BASE_URL}/rideRequests/cancel`,
+  AVAILABLE_DRIVERS: `${API_BASE_URL}/drivers/available`, // Added endpoint for available drivers
 };
+
+export const URL_ENDPOINTS = {
+  PLACEHOLDER: "https://placehold.co/150x50?text=FAST+TAXI"
+}

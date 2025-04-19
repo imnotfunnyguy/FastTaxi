@@ -5,7 +5,7 @@ import i18n from "./src/i18n";
 import HomeScreen from "./src/screens/HomeScreen";
 import DriverRegistrationScreen from "./src/screens/DriverRegistrationScreen";
 import DriverSelectCarScreen from "./src/screens/DriverSelectCarScreen";
-import WaitingForRequestsScreen from "./src/screens/WaitingForRequestsScreen";
+import RideRequestsWaitScreen from "./src/screens/RideRequestsWaitScreen";
 import RideAcceptedScreen from "./src/screens/RideAcceptedScreen"; // Import the new screen
 
 const App = () => {
@@ -29,8 +29,8 @@ const App = () => {
         {currentScreen === "DriverSelectCar" && (
           <DriverSelectCarScreen navigate={navigate} route={{ params: screenParams }} />
         )}
-        {currentScreen === "WaitingForRequests" && (
-          <WaitingForRequestsScreen navigate={navigate} route={{ params: screenParams }}/>
+        {currentScreen === "RideRequestsWaitScreen" && (
+          <RideRequestsWaitScreen navigate={navigate} route={{ params: screenParams }}/>
         )}
         {currentScreen === "RideAccepted" && (
           <RideAcceptedScreen navigate={navigate} route={{ params: screenParams }} />

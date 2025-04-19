@@ -7,7 +7,7 @@ import en from "./locales/en.json";
 import zh from "./locales/zh.json";
 
 // Detect the user's locale
-const fallback = { languageTag: "en", isRTL: false };
+const fallback = { languageTag: "zh", isRTL: false };
 const locales = Localization.getLocales();
 const languageTag = locales.find(locale => ["en", "zh"].includes(locale.languageTag))?.languageTag || fallback.languageTag;
 

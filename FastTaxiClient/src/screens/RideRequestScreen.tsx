@@ -13,14 +13,11 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../types/navigation"; // Import your navigation types
 import { useTranslation } from "react-i18next";
-import { API_ENDPOINTS } from "../config/config"; // Import the API endpoints
-import { Ionicons } from "@expo/vector-icons"; // Import Ionicons for the menu icon
-const BaseScreen = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+import { API_ENDPOINTS, URL_ENDPOINTS } from "../config/config"; // Import the API endpoints
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
+
+const RideRequestScreen = ({ navigate }: { navigate: (screen: string, params?: any) => void }) => {
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
@@ -76,7 +73,7 @@ const BaseScreen = () => {
       formData.append("remark", remark);
       formData.append("additionalDetails", additionalDetails);
 
-      const response = await fetch(API_ENDPOINTS.REQUEST_RIDE, {
+      const response = await fetch(API_ENDPOINTS.RIDE_REQUESTS_REQUEST, {
         method: "POST",
         headers: {
           "Content-Type": "multipart/form-data",
@@ -88,8 +85,21 @@ const BaseScreen = () => {
         throw new Error("Failed to request ride. Please try again.");
       }
 
+      // Save request details to AsyncStorage
+      const requestDetails = {
+        name,
+        phoneNumber,
+        pickupLocation,
+        destination,
+        carType,
+        remark,
+        additionalDetails,
+      };
+
+      await AsyncStorage.setItem("clientRequestData", JSON.stringify(requestDetails));
+
       Alert.alert("Loading", "Ride request sent! Waiting for a driver...");
-      navigation.navigate("WaitingResponseScreen", {
+      navigate("RequestDetailScreen", {
         clientName: name,
         clientPhone: phoneNumber,
       });
@@ -99,26 +109,12 @@ const BaseScreen = () => {
     }
   };
 
-  // Add a menu icon to the top left of the screen
-  useEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity
-          style={styles.menuIcon}
-          onPress={() => navigation.navigate("HistoryScreen")}
-        >
-          <Ionicons name="menu" size={24} color="black" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
-
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ScrollView contentContainerStyle={styles.container}>
         {/* FAST TAXI Logo */}
         <Image
-          source={{ uri: "https://via.placeholder.com/150x50?text=FAST+TAXI" }}
+          source={{ uri: URL_ENDPOINTS.PLACEHOLDER }}
           style={styles.logo}
         />
 
@@ -206,6 +202,14 @@ const BaseScreen = () => {
 
         {/* Request Ride Button */}
         <Button title={t("request_ride")} onPress={requestRide} />
+
+        {/* Navigate to History */}
+        <TouchableOpacity
+          style={styles.historyButton}
+          onPress={() => navigate("HistoryScreen")}
+        >
+          <Text style={styles.historyButtonText}>{t("view_history")}</Text>
+        </TouchableOpacity>
       </ScrollView>
     </TouchableWithoutFeedback>
   );
@@ -220,9 +224,6 @@ const styles = StyleSheet.create({
     height: 50,
     resizeMode: "contain",
     marginBottom: 16,
-  },
-  menuIcon: {
-    marginLeft: 16,
   },
   messageBar: {
     backgroundColor: "#f8d7da",
@@ -257,6 +258,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginBottom: 16,
   },
+  historyButton: {
+    marginTop: 16,
+    padding: 10,
+    backgroundColor: "#007bff",
+    borderRadius: 4,
+  },
+  historyButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
 });
 
-export default BaseScreen;
+export default RideRequestScreen;

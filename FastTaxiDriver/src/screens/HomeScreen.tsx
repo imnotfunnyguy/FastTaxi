@@ -3,7 +3,7 @@ import { View, Text, Button, Alert, StyleSheet, Image, TouchableOpacity } from "
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 import axios from "axios"; // Import axios for API calls
-import { API_BASE_URL } from "../config/config"; // Replace with your actual API base URL
+import { API_ENDPOINTS } from "../config/config"; // Replace with your actual API base URL
 
 const HomeScreen = ({ navigate }: { navigate: (screen: string, params?: object) => void }) => {
   const [driverDetails, setDriverDetails] = useState<any>(null);
@@ -33,7 +33,7 @@ const HomeScreen = ({ navigate }: { navigate: (screen: string, params?: object) 
     const fetchDriverPoints = async () => {
       if (driverDetails) {
         try {
-          const response = await axios.get(`${API_BASE_URL}/driver/details`, {
+          const response = await axios.get(API_ENDPOINTS.DRIVER_DETAILS, {
             params: { driverId: driverDetails.driverId },
           });
   

@@ -10,10 +10,10 @@ import {
   Button,
 } from "react-native";
 import { io } from "socket.io-client";
-import { API_BASE_URL } from "../config/config";
+import { API_ENDPOINTS } from "../config/config";
 import axios from "axios";
 
-const WaitingForRequestsScreen = ({ route, navigate }: { route: any; navigate: (screen: string, params?: any) => void }) => {
+const RideRequestsWaitScreen = ({ route, navigate }: { route: any; navigate: (screen: string, params?: any) => void }) => {
   interface RideRequest {
     id: string;
     pickupLocation: string;
@@ -30,7 +30,7 @@ const WaitingForRequestsScreen = ({ route, navigate }: { route: any; navigate: (
   const [driverPoints, setDriverPoints] = useState<number | null>(null);
 
   useEffect(() => {
-    const socket = io(API_BASE_URL);
+    const socket = io(API_ENDPOINTS.BASE);
 
     socket.on("connect", () => {
       console.log("Connected to server");
@@ -52,12 +52,12 @@ const WaitingForRequestsScreen = ({ route, navigate }: { route: any; navigate: (
   // Fetch driver points and ride requests from the server
   const fetchDriverData = async () => {
     try {
-      const driverResponse = await axios.get(`${API_BASE_URL}/driver/points`, {
+      const driverResponse = await axios.get(API_ENDPOINTS.DRIVER_POINTS, {
         params: { driverId: driverId }, // Replace with actual driver ID
       });
       setDriverPoints(driverResponse.data.points);
 
-      const rideRequestsResponse = await axios.get(`${API_BASE_URL}/rideRequests`, {
+      const rideRequestsResponse = await axios.get(API_ENDPOINTS.RIDE_REQUESTS, {
         params: { driverId: driverId }, // Replace with actual driver ID
       });
       setRideRequests(rideRequestsResponse.data);
@@ -87,7 +87,7 @@ const WaitingForRequestsScreen = ({ route, navigate }: { route: any; navigate: (
     if (!selectedRequest) return;
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/rideRequests/accept`, {
+      const response = await axios.post(API_ENDPOINTS.RIDE_REQUESTS_ACCEPT, {
         rideRequestId: selectedRequest.id,
         driverId: driverId, // Replace with actual driver ID
       });
@@ -246,4 +246,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WaitingForRequestsScreen;
+export default RideRequestsWaitScreen;
